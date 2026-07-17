@@ -164,6 +164,8 @@ export const openAPIDocumentation = createExternalLinkAction({
   section: NavigationSection,
   iconInContextMenu: false,
   icon: <OpenIcon />,
+  // Links to the upstream product's resources — admins only on this fork
+  visible: () => !!stores.auth.user?.isAdmin,
   url: UrlHelper.developers,
   target: "_blank",
 });
@@ -182,6 +184,8 @@ export const openFeedbackUrl = createExternalLinkAction({
   section: NavigationSection,
   iconInContextMenu: false,
   icon: <EmailIcon />,
+  // Links to the upstream product's resources — admins only on this fork
+  visible: () => !!stores.auth.user?.isAdmin,
   url: UrlHelper.contact,
   target: "_blank",
 });
@@ -192,6 +196,8 @@ export const openBugReportUrl = createExternalLinkAction({
   section: NavigationSection,
   iconInContextMenu: false,
   icon: <BugIcon />,
+  // Links to the upstream product's resources — admins only on this fork
+  visible: () => !!stores.auth.user?.isAdmin,
   url: UrlHelper.github,
   target: "_blank",
 });
@@ -202,6 +208,8 @@ export const openChangelog = createExternalLinkAction({
   section: NavigationSection,
   iconInContextMenu: false,
   icon: <OpenIcon />,
+  // Links to the upstream product's resources — admins only on this fork
+  visible: () => !!stores.auth.user?.isAdmin,
   url: UrlHelper.changelog,
   target: "_blank",
 });
