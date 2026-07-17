@@ -35,6 +35,9 @@ import CollectionFilter from "./components/CollectionFilter";
 import DateFilter from "./components/DateFilter";
 import { DocumentFilter } from "./components/DocumentFilter";
 import DocumentTypeFilter from "./components/DocumentTypeFilter";
+import PropertyFilter, {
+  parsePropertyConditions,
+} from "./components/PropertyFilter";
 import RecentSearches from "./components/RecentSearches";
 import SearchInput from "./components/SearchInput";
 import { SortInput } from "./components/SortInput";
@@ -75,18 +78,39 @@ function Search() {
   const sort = (params.get("sort") as TSortFilter) ?? "";
   const direction = (params.get("direction") as TDirectionFilter) ?? "";
 
-  const isSearchable = !!(query || collectionId || userId);
+  // Auriga advanced search: semantic search over the knowledge store with
+  // structured property conditions (usable without query text).
+  const aurigaEnabled = !!env.AURIGA_ENABLED;
+  const advancedFilter = aurigaEnabled
+    ? isTruthyQueryValue(params.get("advanced"))
+    : false;
+  const propertiesParam = params.get("properties") ?? "";
+  const propertyConditions = React.useMemo(
+    () => parsePropertyConditions(propertiesParam),
+    [propertiesParam]
+  );
+
+  const isSearchable = !!(
+    query ||
+    collectionId ||
+    userId ||
+    (advancedFilter && propertyConditions.length > 0)
+  );
 
   const document = documentId ? documents.get(documentId) : undefined;
 
+  // Native filters don't apply to Auriga-backed search, so advanced mode
+  // shows only the toggle and the property conditions.
   const filterVisibility = {
-    document: !!document,
-    collection: !document,
-    user: !document || !!(document && query),
-    documentType: isSearchable,
-    date: isSearchable,
-    title: !!query && !document,
-    sort: isSearchable,
+    document: !!document && !advancedFilter,
+    collection: !document && !advancedFilter,
+    user: (!document || !!(document && query)) && !advancedFilter,
+    documentType: isSearchable && !advancedFilter,
+    date: isSearchable && !advancedFilter,
+    title: !!query && !document && !advancedFilter,
+    sort: isSearchable && !advancedFilter,
+    advanced: aurigaEnabled && !document,
+    properties: advancedFilter,
   };
 
   const filters = React.useMemo(
@@ -131,6 +155,13 @@ function Search() {
           offset: params?.offset,
           limit: params?.limit,
         };
+        if (advancedFilter) {
+          return await documents.searchAuriga({
+            query,
+            properties: propertyConditions,
+            ...paginationParams,
+          });
+        }
         return titleFilter
           ? await documents.searchTitles({ ...filters, ...paginationParams })
           : await documents.search({ ...filters, ...paginationParams });
@@ -138,7 +169,16 @@ function Search() {
     }
 
     return () => Promise.resolve([] as SearchResult[]);
-  }, [query, titleFilter, filters, searches, documents, isSearchable]);
+  }, [
+    query,
+    titleFilter,
+    advancedFilter,
+    propertyConditions,
+    filters,
+    searches,
+    documents,
+    isSearchable,
+  ]);
 
   const { data, next, end, error, loading } = usePaginatedRequest(requestFn, {
     limit: Pagination.defaultLimit,
@@ -168,6 +208,8 @@ function Search() {
     dateFilter?: TDateFilter;
     statusFilter?: TStatusFilter[];
     titleFilter?: boolean | undefined;
+    advanced?: boolean | undefined;
+    properties?: string | undefined;
     sort?: string | undefined;
     direction?: string | undefined;
   }) => {
@@ -235,7 +277,10 @@ function Search() {
   };
 
   const handleEscape = () => searchInputRef.current?.focus();
-  const showEmpty = !loading && query && data?.length === 0;
+  const showEmpty =
+    !loading &&
+    (query || (advancedFilter && propertyConditions.length > 0)) &&
+    data?.length === 0;
 
   const sortInput = filterVisibility.sort ? (
     <SortInput
@@ -315,6 +360,34 @@ function Search() {
                     handleFilterChange({ titleFilter: checked });
                   }}
                   checked={titleFilter}
+                  inForm={false}
+                />
+              )}
+              {filterVisibility.properties && (
+                <PropertyFilter
+                  conditions={propertyConditions}
+                  onChange={(conditions) =>
+                    handleFilterChange({
+                      properties: conditions.length
+                        ? JSON.stringify(conditions)
+                        : undefined,
+                    })
+                  }
+                />
+              )}
+              {filterVisibility.advanced && (
+                <SearchTitlesFilter
+                  width={26}
+                  height={14}
+                  label={t("Advanced search")}
+                  onChange={(checked: boolean) => {
+                    handleFilterChange(
+                      checked
+                        ? { advanced: true }
+                        : { advanced: undefined, properties: undefined }
+                    );
+                  }}
+                  checked={advancedFilter}
                   inForm={false}
                 />
               )}

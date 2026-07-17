@@ -1,7 +1,7 @@
 import invariant from "invariant";
 import { compact, filter, omitBy, orderBy } from "es-toolkit/compat";
 import { observable, action, computed, runInAction } from "mobx";
-import type { DirectionFilter, SortFilter } from "@shared/types";
+import type { DirectionFilter, JSONValue, SortFilter } from "@shared/types";
 import {
   AttachmentPreset,
   SubscriptionType,
@@ -420,6 +420,49 @@ export default class DocumentsStore extends Store<Document> {
         }
         return {
           id: document.id,
+          document,
+        };
+      })
+    );
+    return results;
+  };
+
+  @action
+  searchAuriga = async (options: {
+    query?: string;
+    properties?: JSONValue[];
+    offset?: number;
+    limit?: number;
+  }): Promise<SearchResult[]> => {
+    // Auriga semantic search returns a single page of results
+    if (options.offset) {
+      return [];
+    }
+    const res = await client.post("/auriga.search", {
+      query: options.query || undefined,
+      properties: options.properties?.length ? options.properties : undefined,
+      limit: options.limit,
+    });
+    invariant(res?.data, "Search response should be available");
+
+    // add the documents and associated policies to the store
+    runInAction("DocumentsStore#searchAuriga", () => {
+      res.data.forEach((result: SearchResult) => this.add(result.document));
+      this.addPolicies(res.policies);
+    });
+
+    // store a reference to the document model in the search cache instead
+    // of the original result from the API.
+    const results: SearchResult[] = compact(
+      res.data.map((result: SearchResult) => {
+        const document = this.data.get(result.document.id);
+        if (!document) {
+          return null;
+        }
+        return {
+          id: document.id,
+          ranking: result.ranking,
+          context: result.context,
           document,
         };
       })

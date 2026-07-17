@@ -1,0 +1,6 @@
+{
+  "id": "auriga",
+  "name": "Auriga",
+  "priority": 30,
+  "description": "Semantic search and document properties backed by the Auriga knowledge store."
+}

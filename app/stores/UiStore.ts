@@ -35,6 +35,7 @@ type PersistedData = Pick<
   | "sidebarRightWidth"
   | "sidebarCollapsed"
   | "tocVisible"
+  | "propertiesVisible"
 >;
 
 class UiStore {
@@ -65,6 +66,12 @@ class UiStore {
 
   @observable
   tocVisible: boolean | undefined;
+
+  // Auriga properties panel — occupies the same rail as the table of
+  // contents, so only one of tocVisible/propertiesVisible is true at a time
+  // (enforced in `set`).
+  @observable
+  propertiesVisible: boolean | undefined;
 
   @observable
   mobileSidebarVisible = false;
@@ -145,6 +152,7 @@ class UiStore {
     this.sidebarRightWidth =
       data.sidebarRightWidth || defaultTheme.sidebarRightWidth;
     this.tocVisible = data.tocVisible;
+    this.propertiesVisible = data.propertiesVisible;
     this.rightSidebar = data.rightSidebar ?? null;
     this.theme = data.theme || Theme.System;
 
@@ -382,6 +390,12 @@ class UiStore {
 
   @action
   set = (data: Partial<PersistedData>) => {
+    // The contents and properties panels share the same rail
+    if (data.tocVisible === true) {
+      data.propertiesVisible = false;
+    } else if (data.propertiesVisible === true) {
+      data.tocVisible = false;
+    }
     for (const key in data) {
       // @ts-expect-error doesn't understand PersistedData is subset of keys
       this[key] = data[key];
@@ -475,6 +489,7 @@ class UiStore {
   get asJson(): PersistedData {
     return {
       tocVisible: this.tocVisible,
+      propertiesVisible: this.propertiesVisible,
       sidebarCollapsed: this.sidebarCollapsed,
       sidebarWidth: this.sidebarWidth,
       sidebarRightWidth: this.sidebarRightWidth,

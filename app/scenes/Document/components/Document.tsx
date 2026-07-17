@@ -33,7 +33,9 @@ import { emojiToUrl } from "~/utils/emoji";
 import { documentHistoryPath, documentEditPath } from "~/utils/routeHelpers";
 import { useDocumentSave } from "../hooks/useDocumentSave";
 import Container from "./Container";
+import env from "~/env";
 import Contents from "./Contents";
+import PropertiesPanel from "./Properties";
 import Editor from "./Editor";
 import Header from "./Header";
 import Notices from "./Notices";
@@ -286,8 +288,13 @@ function DocumentScene({
     tocPosition ??
     ((team?.getPreference(TeamPreference.TocPosition) as TOCPosition) ||
       TOCPosition.Left);
+  // The Auriga properties panel shares the contents rail; UiStore.set keeps
+  // the two visibilities mutually exclusive.
+  const showProperties =
+    !isShare && !!env.AURIGA_ENABLED && ui.propertiesVisible === true;
   const showContents =
-    tocPos && (isShare ? ui.tocVisible !== false : ui.tocVisible === true);
+    (tocPos && (isShare ? ui.tocVisible !== false : ui.tocVisible === true)) ||
+    showProperties;
   const tocOffset =
     tocPos === TOCPosition.Left
       ? EditorStyleHelper.tocWidth / -2
@@ -391,7 +398,7 @@ function DocumentScene({
                   <>
                     <Notices document={document} readOnly={readOnly} />
 
-                    {showContents && (
+                    {showContents && !showProperties && (
                       <PrintContentsContainer>
                         <Contents />
                       </PrintContentsContainer>
@@ -432,7 +439,11 @@ function DocumentScene({
                   docFullWidth={document.fullWidth}
                   position={tocPos}
                 >
-                  <Contents />
+                  {showProperties ? (
+                    <PropertiesPanel document={document} />
+                  ) : (
+                    <Contents />
+                  )}
                 </ContentsContainer>
               )}
             </React.Suspense>

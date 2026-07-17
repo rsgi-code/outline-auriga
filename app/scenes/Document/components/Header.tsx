@@ -1,5 +1,5 @@
 import { observer } from "mobx-react";
-import { TableOfContentsIcon, EditIcon } from "outline-icons";
+import { TableOfContentsIcon, EditIcon, InfoIcon } from "outline-icons";
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -20,6 +20,7 @@ import Flex from "~/components/Flex";
 import Header from "~/components/Header";
 import Star from "~/components/Star";
 import Tooltip from "~/components/Tooltip";
+import env from "~/env";
 import { type Editor } from "~/editor";
 import useCurrentTeam from "~/hooks/useCurrentTeam";
 import useCurrentUser from "~/hooks/useCurrentUser";
@@ -140,6 +141,21 @@ function DocumentHeader({
       />
     </Tooltip>
   );
+  const showProperties = ui.propertiesVisible === true;
+  const properties = env.AURIGA_ENABLED ? (
+    <Tooltip
+      content={showProperties ? t("Hide properties") : t("Show properties")}
+      placement="bottom"
+    >
+      <TocButton
+        aria-label={t("Show properties")}
+        onClick={() => ui.set({ propertiesVisible: !ui.propertiesVisible })}
+        icon={<InfoIcon />}
+        borderOnHover
+        neutral
+      />
+    </Tooltip>
+  ) : null;
   const editAction = (
     <Action>
       <Tooltip
@@ -182,7 +198,8 @@ function DocumentHeader({
           <TableOfContentsMenu />
         ) : (
           <DocumentBreadcrumb document={document}>
-            {toc}{" "}
+            {toc}
+            {properties}{" "}
             <StarAction>
               <Star document={document} color={theme.textSecondary} />
             </StarAction>

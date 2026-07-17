@@ -1,3 +1,38 @@
+# RSGI fork — Auriga integration
+
+This is a fork of [outline/outline](https://github.com/outline/outline),
+branch `auriga` based on tag `v1.9.1`, adding UI backed by the
+[Auriga](https://github.com/rsgi-code/Auriga) knowledge store: an
+"Advanced search" mode (semantic search + property-condition filters, via
+Auriga's Qdrant hybrid search) and a document Properties panel in the
+contents rail. All features are inert unless the `AURIGA_URL` env var is set
+(the browser never talks to Auriga directly — everything proxies through
+authenticated routes that re-check Outline document permissions).
+
+**Patch surface** (everything else is new files, mostly under
+`plugins/auriga/` — keep this list current when rebasing onto upstream):
+
+- `app/scenes/Document/components/Document.tsx` — contents rail renders the
+  Properties panel when toggled
+- `app/scenes/Document/components/Header.tsx` — Properties button next to the
+  contents button
+- `app/scenes/Search/Search.tsx` — Advanced search toggle + property filter
+  wiring (query params `advanced`, `properties`)
+- `app/stores/DocumentsStore.ts` — `searchAuriga()` calling `/api/auriga.search`
+- `app/stores/UiStore.ts` — persisted `propertiesVisible` (mutually exclusive
+  with `tocVisible`)
+
+New files: `plugins/auriga/` (server routes + env),
+`app/scenes/Search/components/PropertyFilter.tsx`,
+`app/scenes/Document/components/Properties.tsx`.
+
+**Rebase procedure:** fetch upstream, rebase `auriga` onto the new release
+tag, resolve conflicts in the five files above, run `yarn install && yarn tsc
+--noEmit`, rebuild the Docker image (see deploy notes in the Auriga repo's
+`deploy/README.md`).
+
+---
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./public/logos/outline-logo-dark.png" height="29">
