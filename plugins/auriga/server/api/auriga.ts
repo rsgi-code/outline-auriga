@@ -163,24 +163,19 @@ router.post(
       `/v0/outline/properties?outline_id=${encodeURIComponent(id)}`
     );
     if (status === 404) {
-      ctx.body = { data: { found: false, document: {}, sections: {} } };
+      ctx.body = { data: { found: false, properties: {} } };
       return;
     }
     if (status !== 200) {
       throw InvalidRequestError("Auriga is unavailable");
     }
 
-    const metadata = (json.metadata ?? {}) as {
-      document?: Record<string, unknown>;
-      sections?: Record<string, unknown>;
-    };
     ctx.body = {
       data: {
         found: true,
         docId: json.doc_id,
         updatedAt: json.updated_at,
-        document: metadata.document ?? {},
-        sections: metadata.sections ?? {},
+        properties: (json.metadata ?? {}) as Record<string, unknown>,
       },
     };
   }

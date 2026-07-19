@@ -6,19 +6,15 @@ import styled from "styled-components";
 import { EditorStyleHelper } from "@shared/editor/styles/EditorStyleHelper";
 import { depths, hideScrollbars, s } from "@shared/styles";
 import breakpoint from "styled-components-breakpoint";
-import { useDocumentContext } from "~/components/DocumentContext";
 import type Document from "~/models/Document";
 import { client } from "~/utils/ApiClient";
 
-// Auriga document/section attributes, displayed in the same rail as the table
-// of contents (the two are mutually exclusive — see UiStore.set). Document-
-// level properties render at the top; section-level properties follow in
-// document order, matched to headings by their text.
+// Auriga document attributes, displayed in the same rail as the table of
+// contents (the two are mutually exclusive — see UiStore.set).
 
 type PropertiesData = {
   found: boolean;
-  document: Record<string, unknown>;
-  sections: Record<string, Record<string, unknown>>;
+  properties: Record<string, unknown>;
 };
 
 function formatValue(value: unknown): string {
@@ -49,7 +45,6 @@ function PropertyRows({ attrs }: { attrs: Record<string, unknown> }) {
 
 function Properties({ document }: { document: Document }) {
   const { t } = useTranslation();
-  const { headings } = useDocumentContext();
   const [data, setData] = useState<PropertiesData | null>(null);
   const [error, setError] = useState(false);
 
@@ -74,29 +69,8 @@ function Properties({ document }: { document: Document }) {
     };
   }, [document.id]);
 
-  const documentAttrs = data?.document ?? {};
-  const sections = data?.sections ?? {};
-  const hasDocumentAttrs = Object.keys(documentAttrs).length > 0;
-  const hasSections = Object.keys(sections).length > 0;
-
-  // Order section groups by their position in the document; unmatched
-  // section keys (heading renamed since ingestion, etc.) render at the end.
-  const orderedSections: Array<{
-    key: string;
-    id: string | null;
-    attrs: Record<string, unknown>;
-  }> = [];
-  const remaining = new Map(Object.entries(sections));
-  for (const heading of headings) {
-    const match = remaining.get(heading.title.trim());
-    if (match) {
-      orderedSections.push({ key: heading.title.trim(), id: heading.id, attrs: match });
-      remaining.delete(heading.title.trim());
-    }
-  }
-  for (const [key, attrs] of remaining) {
-    orderedSections.push({ key, id: null, attrs });
-  }
+  const properties = data?.properties ?? {};
+  const hasProperties = Object.keys(properties).length > 0;
 
   return (
     <StickyWrapper>
@@ -105,24 +79,10 @@ function Properties({ document }: { document: Document }) {
         <Empty>{t("Something went wrong")}</Empty>
       ) : data === null ? (
         <Empty>{t("Loading")}…</Empty>
-      ) : !data.found || (!hasDocumentAttrs && !hasSections) ? (
+      ) : !data.found || !hasProperties ? (
         <Empty>{t("No properties")}</Empty>
       ) : (
-        <>
-          {hasDocumentAttrs && <PropertyRows attrs={documentAttrs} />}
-          {orderedSections.map((section) => (
-            <Section key={section.key}>
-              <SectionHeading>
-                {section.id ? (
-                  <a href={`#${section.id}`}>{section.key}</a>
-                ) : (
-                  section.key
-                )}
-              </SectionHeading>
-              <PropertyRows attrs={section.attrs} />
-            </Section>
-          ))}
-        </>
+        <PropertyRows attrs={properties} />
       )}
     </StickyWrapper>
   );
@@ -166,25 +126,6 @@ const Heading = styled.h3`
 const Empty = styled.p`
   font-size: 14px;
   color: ${s("textTertiary")};
-`;
-
-const Section = styled.div`
-  margin-top: 12px;
-`;
-
-const SectionHeading = styled.h4`
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 4px;
-  word-break: break-word;
-
-  a {
-    color: ${s("text")};
-
-    &:hover {
-      color: ${s("accent")};
-    }
-  }
 `;
 
 const Rows = styled.dl`
