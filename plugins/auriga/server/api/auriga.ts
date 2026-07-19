@@ -20,9 +20,13 @@ async function aurigaRequest(
   path: string,
   body?: object
 ): Promise<{ status: number; json: Record<string, unknown> }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (env.AURIGA_TOKEN) {
+    headers["Authorization"] = `Bearer ${env.AURIGA_TOKEN}`;
+  }
   const res = await fetch(`${env.AURIGA_URL}${path}`, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
   let json: Record<string, unknown> = {};

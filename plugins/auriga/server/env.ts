@@ -14,6 +14,14 @@ class AurigaPluginEnvironment extends Environment {
   public AURIGA_URL = this.toOptionalString(environment.AURIGA_URL);
 
   /**
+   * Bearer token for Auriga's admin API, when it is token-gated
+   * (AURIGA_ADMIN_TOKEN on the Auriga side). Sent on every proxied request;
+   * never exposed to the browser.
+   */
+  @IsOptional()
+  public AURIGA_TOKEN = this.toOptionalString(environment.AURIGA_TOKEN);
+
+  /**
    * Whether the Auriga integration is configured — the only signal the
    * frontend receives (via window.env).
    */
