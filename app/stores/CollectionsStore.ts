@@ -1,6 +1,6 @@
 import invariant from "invariant";
 import { isEmpty, orderBy, sortBy } from "es-toolkit/compat";
-import { computed, action, runInAction } from "mobx";
+import { computed, action, observable, runInAction } from "mobx";
 import {
   CollectionPermission,
   CollectionStatusFilter,
@@ -33,6 +33,38 @@ export default class CollectionsStore extends Store<Collection> {
   @computed
   get allActive() {
     return this.orderedData.filter((c) => c.isActive);
+  }
+
+  // --- Auriga: collections projected from the Auriga knowledge store ---------
+  // Their Outline ids, fetched from the Auriga bridge; drives the split of the
+  // sidebar into a normal "Collections" section and a separate "Auriga" one.
+  @observable
+  aurigaCollectionIds: string[] = [];
+
+  @action
+  fetchAurigaCollectionIds = async (): Promise<void> => {
+    try {
+      const res = await client.post("/auriga.collections");
+      runInAction(() => {
+        this.aurigaCollectionIds = (res?.data?.collectionIds ?? []) as string[];
+      });
+    } catch {
+      // Auriga unavailable — leave the Auriga section empty rather than erroring.
+    }
+  };
+
+  // Active collections that did NOT come from Auriga (Welcome + user-created).
+  @computed
+  get normalActive(): Collection[] {
+    const auriga = new Set(this.aurigaCollectionIds);
+    return this.allActive.filter((c) => !auriga.has(c.id));
+  }
+
+  // Active collections projected from Auriga.
+  @computed
+  get aurigaActive(): Collection[] {
+    const auriga = new Set(this.aurigaCollectionIds);
+    return this.allActive.filter((c) => auriga.has(c.id));
   }
 
   @computed

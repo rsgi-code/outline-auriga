@@ -82,6 +82,16 @@ router.post("auriga.info", auth(), async (ctx: APIContext) => {
   ctx.body = { data: { fields } };
 });
 
+// Outline ids of the collections that originate from Auriga, so the sidebar
+// can separate them from user-created collections.
+router.post("auriga.collections", auth(), async (ctx: APIContext) => {
+  const { status, json } = await aurigaRequest("GET", "/v0/outline/collections");
+  if (status !== 200) {
+    throw InvalidRequestError("Auriga is unavailable");
+  }
+  ctx.body = { data: { collectionIds: (json.ids ?? []) as string[] } };
+});
+
 router.post(
   "auriga.search",
   auth(),

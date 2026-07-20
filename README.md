@@ -21,15 +21,24 @@ authenticated routes that re-check Outline document permissions).
 - `app/stores/DocumentsStore.ts` — `searchAuriga()` calling `/api/auriga.search`
 - `app/stores/UiStore.ts` — persisted `propertiesVisible` (mutually exclusive
   with `tocVisible`)
+- `app/stores/CollectionsStore.ts` — `aurigaCollectionIds` + `fetchAurigaCollectionIds()`
+  and the `normalActive` / `aurigaActive` getters that split the sidebar
+- `app/components/Sidebar/App.tsx` — fetches the Auriga collection ids and
+  renders the `AurigaCollections` section below `Collections`
+- `app/components/Sidebar/components/Collections.tsx` — sources `normalActive`
+  (Auriga collections are excluded here and shown in their own section)
 
 New files: `plugins/auriga/` (server routes + env),
 `app/scenes/Search/components/PropertyFilter.tsx`,
-`app/scenes/Document/components/Properties.tsx`.
+`app/scenes/Document/components/Properties.tsx`,
+`app/components/Sidebar/components/AurigaCollections.tsx` (the "Auriga"
+sidebar section — no create action, no reorder) and its
+`StaticCollectionLink.tsx` (non-draggable collection link).
 
 **Rebase procedure:** fetch upstream, rebase `auriga` onto the new release
-tag, resolve conflicts in the five files above, run `yarn install && yarn tsc
---noEmit`, rebuild the Docker image (see deploy notes in the Auriga repo's
-`deploy/README.md`).
+tag, resolve conflicts in the patched core files above, run `yarn install &&
+yarn tsc --noEmit`, rebuild the Docker image (base first — see deploy notes in
+the Auriga repo's `deploy/README.md`).
 
 ---
 

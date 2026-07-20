@@ -17,10 +17,12 @@ import usePolicy from "~/hooks/usePolicy";
 import useStores from "~/hooks/useStores";
 import TeamMenu from "~/menus/TeamMenu";
 import { homePath, searchPath } from "~/utils/routeHelpers";
+import env from "~/env";
 import TeamLogo from "../TeamLogo";
 import Tooltip from "../Tooltip";
 import Sidebar from "./Sidebar";
 import ArchiveLink from "./components/ArchiveLink";
+import AurigaCollections from "./components/AurigaCollections";
 import Collections from "./components/Collections";
 import { DraftsLink } from "./components/DraftsLink";
 import DragPlaceholder from "./components/DragPlaceholder";
@@ -54,6 +56,10 @@ function AppSidebar() {
 
   useEffect(() => {
     void collections.fetchAll();
+
+    if (env.AURIGA_ENABLED) {
+      void collections.fetchAurigaCollectionIds();
+    }
 
     if (!user.isViewer) {
       void documents.fetchDrafts();
@@ -132,6 +138,11 @@ function AppSidebar() {
             <Section>
               <Collections />
             </Section>
+            {env.AURIGA_ENABLED && (
+              <Section>
+                <AurigaCollections />
+              </Section>
+            )}
             {can.createDocument && (
               <Section auto>
                 <ArchiveLink />

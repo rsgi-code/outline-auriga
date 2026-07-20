@@ -26,7 +26,9 @@ function Collections() {
   const { documents, auth, collections } = useStores();
   const { t } = useTranslation();
   const can = usePolicy(auth.team?.id);
-  const orderedCollections = collections.allActive;
+  // Auriga-projected collections render in their own section (AurigaCollections);
+  // this section shows only user/default collections.
+  const orderedCollections = collections.normalActive;
 
   const params = useMemo(
     () => ({
